@@ -1,4 +1,16 @@
 /** Static definition of the four brains and their tabs (Phase 1). */
+import {
+  BookOpen,
+  GraduationCap,
+  Library,
+  Lock,
+  LucideIcon,
+  Rocket,
+  Sparkles,
+  SquareKanban,
+  StickyNote,
+  Waypoints,
+} from "lucide-react";
 
 export type TabId =
   | "books"
@@ -12,18 +24,18 @@ export type TabId =
 export interface TabDef {
   id: TabId;
   label: string;
-  icon: string;
+  icon: LucideIcon;
 }
 
 export interface BrainDef {
   id: "books" | "learning" | "projects" | "private";
   label: string;
-  icon: string;
+  icon: LucideIcon;
   tagline: string;
   tabs: TabDef[];
 }
 
-const t = (id: TabId, label: string, icon: string): TabDef => ({
+const t = (id: TabId, label: string, icon: LucideIcon): TabDef => ({
   id,
   label,
   icon,
@@ -33,46 +45,46 @@ export const BRAINS: BrainDef[] = [
   {
     id: "books",
     label: "Books",
-    icon: "📚",
+    icon: Library,
     tagline: "Everything you're writing — nothing else.",
     tabs: [
-      t("books", "Books", "📖"),
-      t("prompts", "Prompts", "✨"),
-      t("boards", "Boards", "🗂️"),
-      t("flows", "Flows", "🧭"),
-      t("notes", "Notes", "🗒️"),
+      t("books", "Books", BookOpen),
+      t("prompts", "Prompts", Sparkles),
+      t("boards", "Boards", SquareKanban),
+      t("flows", "Flows", Waypoints),
+      t("notes", "Notes", StickyNote),
     ],
   },
   {
     id: "learning",
     label: "Learning",
-    icon: "🎓",
+    icon: GraduationCap,
     tagline: "Courses and skills you're building right now.",
     tabs: [
-      t("courses", "Courses", "🎓"),
-      t("boards", "Boards", "🗂️"),
-      t("flows", "Flows", "🧭"),
-      t("notes", "Notes", "🗒️"),
+      t("courses", "Courses", GraduationCap),
+      t("boards", "Boards", SquareKanban),
+      t("flows", "Flows", Waypoints),
+      t("notes", "Notes", StickyNote),
     ],
   },
   {
     id: "projects",
     label: "Projects",
-    icon: "🚀",
+    icon: Rocket,
     tagline: "Active projects, one focus at a time.",
     tabs: [
-      t("projects", "Projects", "🚀"),
-      t("prompts", "Prompts", "✨"),
-      t("boards", "Boards", "🗂️"),
-      t("flows", "Flows", "🧭"),
-      t("notes", "Notes", "🗒️"),
+      t("projects", "Projects", Rocket),
+      t("prompts", "Prompts", Sparkles),
+      t("boards", "Boards", SquareKanban),
+      t("flows", "Flows", Waypoints),
+      t("notes", "Notes", StickyNote),
     ],
   },
   {
     id: "private",
     label: "Private",
-    icon: "🔒",
+    icon: Lock,
     tagline: "Your personal space for any kind of note.",
-    tabs: [t("notes", "Notes", "🗒️")],
+    tabs: [t("notes", "Notes", StickyNote)],
   },
 ];

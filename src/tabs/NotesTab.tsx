@@ -1,4 +1,38 @@
+import { ReactNode } from "react";
+import {
+  BookOpen,
+  ChevronDown,
+  ChevronRight,
+  FileText,
+  Folder,
+  Lightbulb,
+  Map,
+  Users,
+} from "lucide-react";
 import { PlaceholderHint, SectionHead } from "./shared";
+
+function TreeItem({
+  icon,
+  label,
+  state,
+  active,
+}: {
+  icon?: ReactNode;
+  label: string;
+  state?: "open" | "closed";
+  active?: boolean;
+}) {
+  return (
+    <div className={`tree-item ${active ? "active" : ""}`}>
+      <span className="twisty">
+        {state === "open" && <ChevronDown size={12} />}
+        {state === "closed" && <ChevronRight size={12} />}
+      </span>
+      {icon && <span className="t-ico">{icon}</span>}
+      {label}
+    </div>
+  );
+}
 
 export function NotesTab({ brainId }: { brainId: string }) {
   return (
@@ -10,42 +44,30 @@ export function NotesTab({ brainId }: { brainId: string }) {
       />
       <div className="notes-layout">
         <div className="note-tree">
-          <div className="tree-item">
-            <span className="twisty">▸</span>🗂️ Story ideas
-          </div>
-          <div className="tree-item active">
-            <span className="twisty">▾</span>📖 The Hollow Crown
-          </div>
+          <TreeItem icon={<Folder size={14} />} label="Story ideas" state="closed" />
+          <TreeItem
+            icon={<BookOpen size={14} />}
+            label="The Hollow Crown"
+            state="open"
+            active
+          />
           <div className="tree-children">
-            <div className="tree-item">
-              <span className="twisty">▾</span>👤 Characters
-            </div>
+            <TreeItem icon={<Users size={14} />} label="Characters" state="open" />
             <div className="tree-children">
-              <div className="tree-item">
-                <span className="twisty" />
-                Queen Maren
-              </div>
-              <div className="tree-item">
-                <span className="twisty" />
-                The Archivist
-              </div>
+              <TreeItem icon={<FileText size={14} />} label="Queen Maren" />
+              <TreeItem icon={<FileText size={14} />} label="The Archivist" />
             </div>
-            <div className="tree-item">
-              <span className="twisty">▸</span>🗺️ World lore
-            </div>
-            <div className="tree-item">
-              <span className="twisty" />
-              Timeline
-            </div>
+            <TreeItem icon={<Map size={14} />} label="World lore" state="closed" />
+            <TreeItem icon={<FileText size={14} />} label="Timeline" />
           </div>
-          <div className="tree-item">
-            <span className="twisty">▸</span>💡 Random sparks
-          </div>
+          <TreeItem
+            icon={<Lightbulb size={14} />}
+            label="Random sparks"
+            state="closed"
+          />
         </div>
         <div className="note-editor">
-          <div className="note-breadcrumb">
-            Notes / The Hollow Crown
-          </div>
+          <div className="note-breadcrumb">Notes / The Hollow Crown</div>
           <div className="note-title">The Hollow Crown</div>
           <div className="note-body">
             {`Core premise: the throne itself is alive and feeds on the memories of whoever rules.

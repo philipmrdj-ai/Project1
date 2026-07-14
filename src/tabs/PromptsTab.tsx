@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Check, Copy, Link2 } from "lucide-react";
 import { ChipRow, PlaceholderHint, SectionHead } from "./shared";
 
 const MOCK_PROMPTS = [
@@ -42,7 +43,7 @@ export function PromptsTab({ brainId }: { brainId: string }) {
         <PromptCard key={p.title} {...p} />
       ))}
       <PlaceholderHint>
-        Phase 2: the 📋 button copies the prompt instantly. <b>Pipelines</b>{" "}
+        Phase 2: the Copy button copies the prompt instantly. <b>Pipelines</b>{" "}
         chain prompts together so you can run a sequence (e.g. summarize →
         edit → check) step by step, copying each stage as you go.
       </PlaceholderHint>
@@ -77,14 +78,15 @@ function PromptCard({
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
           <span className="badge neutral">{category}</span>
           <button className="btn small" onClick={copy}>
-            {copied ? "✓ Copied" : "📋 Copy"}
+            {copied ? <Check size={13} /> : <Copy size={13} />}
+            {copied ? "Copied" : "Copy"}
           </button>
         </div>
       </div>
       <div className="prompt-body">{body}</div>
       {pipeline.length > 0 && (
         <div className="pipeline-strip">
-          ⛓️ Pipeline:
+          <Link2 size={13} /> Pipeline:
           {pipeline.map((s, i) => (
             <span key={s} style={{ display: "flex", gap: 6, alignItems: "center" }}>
               {i > 0 && "→"}

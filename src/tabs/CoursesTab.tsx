@@ -1,3 +1,4 @@
+import { Link, Paperclip } from "lucide-react";
 import { ChipRow, PlaceholderHint, SectionHead } from "./shared";
 
 const MOCK_COURSES = [
@@ -59,8 +60,12 @@ export function CoursesTab() {
                 <span className="b-dot" />
                 {c.status}
               </span>
-              <span className="badge neutral">🔗 {c.links} links</span>
-              <span className="badge neutral">📎 {c.docs} docs</span>
+              <span className="badge neutral">
+                <Link size={11} /> {c.links} links
+              </span>
+              <span className="badge neutral">
+                <Paperclip size={11} /> {c.docs} docs
+              </span>
             </div>
             <div className="progress">
               <div style={{ width: `${c.progress}%` }} />

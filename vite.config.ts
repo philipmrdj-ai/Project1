@@ -10,4 +10,8 @@ export default defineConfig({
   preview: {
     port: 5181,
   },
+  build: {
+    // inline fonts into the CSS so the built app is fully self-contained
+    assetsInlineLimit: 1_000_000,
+  },
 });

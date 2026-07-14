@@ -1,3 +1,4 @@
+import { Check } from "lucide-react";
 import { PlaceholderHint, SectionHead } from "./shared";
 
 const MOCK_FLOWS = [
@@ -45,7 +46,7 @@ export function FlowsTab({ brainId }: { brainId: string }) {
                     i < f.current ? "done" : i === f.current ? "current" : ""
                   }`}
                 >
-                  {i < f.current && <span className="n-check">✓</span>}
+                  {i < f.current && <Check size={12} />}
                   {s}
                 </div>
               </div>

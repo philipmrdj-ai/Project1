@@ -29,7 +29,11 @@ export default function App() {
   const [nav, setNav] = useState<NavState>(loadNav);
 
   useEffect(() => {
-    localStorage.setItem(NAV_KEY, JSON.stringify(nav));
+    try {
+      localStorage.setItem(NAV_KEY, JSON.stringify(nav));
+    } catch {
+      /* storage unavailable (e.g. sandboxed preview) — nav just won't persist */
+    }
     document.documentElement.setAttribute("data-brain", nav.brain);
   }, [nav]);
 

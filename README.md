@@ -33,6 +33,7 @@ npm run preview  # serve the built version
 ## Roadmap
 
 - [x] **Phase 1** — design system + app shell, all brains & tabs as placeholders
-- [ ] **Phase 2** — Books brain fully working + nested notes engine
-- [ ] **Phase 3** — Learning, Projects and Private brains
-- [ ] **Phase 4** — polish: global search, export/import backup, focus mode, shortcuts
+- [x] **Phase 2** — Books brain fully working + nested notes engine; Prompts,
+      Boards, Flows and Notes are brain-scoped modules, live in every brain
+- [ ] **Phase 3** — Learning courses + Projects
+- [ ] **Phase 4** — polish: global search, export/import backup, shortcuts

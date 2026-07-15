@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Brain, MoonStar, Sun } from "lucide-react";
 import { BRAINS, BrainDef, TabId } from "./brains";
+import { DbProvider } from "./state/store";
 import { BooksTab } from "./tabs/BooksTab";
 import { PromptsTab } from "./tabs/PromptsTab";
 import { BoardsTab } from "./tabs/BoardsTab";
@@ -53,7 +54,7 @@ export default function App() {
   const setMode = (m: Mode) => setNav((n) => ({ ...n, mode: m }));
 
   return (
-    <>
+    <DbProvider>
       <div className="bg-scene">
         <div className="bg-blob a" />
         <div className="bg-blob b" />
@@ -93,7 +94,7 @@ export default function App() {
               <Sun size={14} />
             </button>
           </div>
-          <div className="rail-foot">v0.2</div>
+          <div className="rail-foot">v0.3</div>
         </nav>
 
         <div className="main">
@@ -115,7 +116,7 @@ export default function App() {
               ))}
             </nav>
             <div style={{ flex: 1 }} />
-            <span className="phase-ribbon">PHASE 1 · PREVIEW</span>
+            <span className="phase-ribbon">PHASE 2 · PREVIEW</span>
           </header>
 
           <main className="content panel" key={`${brain.id}-${activeTab}`}>
@@ -123,7 +124,7 @@ export default function App() {
           </main>
         </div>
       </div>
-    </>
+    </DbProvider>
   );
 }
 

@@ -46,6 +46,15 @@ function seed(): DB {
     genres: ["Fantasy", "Sci-fi", "Mystery", "Romance", "Self-help"].map((n) =>
       label("books", n)
     ),
+    courses: [],
+    courseStatuses: ["Not started", "In progress", "Paused", "Completed"].map(
+      (n) => label("learning", n)
+    ),
+    projects: [],
+    projectStatuses: ["Idea", "Planning", "Building", "Done"].map((n) =>
+      label("projects", n)
+    ),
+    projectCategories: ["General"].map((n) => label("projects", n)),
     prompts: [],
     promptCategories: [
       ...["Editing", "Characters", "Worldbuilding", "Plotting"].map((n) =>

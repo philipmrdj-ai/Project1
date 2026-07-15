@@ -18,7 +18,13 @@ import {
 } from "../components/ui";
 import { now, patchById, removeById, uid, useDb } from "../state/store";
 import { Book, Label } from "../state/types";
-import { FilterRow, SectionHead } from "./shared";
+import {
+  FilterRow,
+  ItemsView,
+  SectionHead,
+  useViewPref,
+  ViewSwitcher,
+} from "./shared";
 
 export function BooksTab() {
   const [db, update] = useDb();
@@ -32,6 +38,7 @@ export function BooksTab() {
   const [statusId, setStatusId] = useState<string | null>(null);
   const [genreId, setGenreId] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
+  const [view, setView] = useViewPref("books");
 
   const openBook = db.books.find((b) => b.id === openId);
   if (openBook) {
@@ -67,6 +74,7 @@ export function BooksTab() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
+            <ViewSwitcher value={view} onChange={setView} />
             <button
               className={`btn ghost ${showArchived ? "active" : ""}`}
               onClick={() => setShowArchived((v) => !v)}
@@ -125,13 +133,15 @@ export function BooksTab() {
           />
         )
       ) : (
-        <div className="card-grid">
-          {shown.map((b) => (
-            <div className="card" key={b.id} onClick={() => setOpenId(b.id)}>
-              <div className="stripe" />
-              <h3>{b.title}</h3>
-              <p>{b.description || "No description yet."}</p>
-              <div className="meta-row">
+        <ItemsView
+          view={view}
+          onOpen={setOpenId}
+          items={shown.map((b) => ({
+            id: b.id,
+            title: b.title,
+            desc: b.description,
+            badges: (
+              <>
                 {labelName(db.statuses, b.statusId) && (
                   <span className="badge">
                     <span className="b-dot" />
@@ -146,10 +156,10 @@ export function BooksTab() {
                 <span className="badge neutral">
                   {b.kind === "fiction" ? "Fiction" : "Non-fiction"}
                 </span>
-              </div>
-            </div>
-          ))}
-        </div>
+              </>
+            ),
+          }))}
+        />
       )}
 
       {creating && (

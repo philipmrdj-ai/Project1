@@ -94,7 +94,7 @@ export default function App() {
               <Sun size={14} />
             </button>
           </div>
-          <div className="rail-foot">v0.3</div>
+          <div className="rail-foot">v0.4</div>
         </nav>
 
         <div className="main">
@@ -116,7 +116,7 @@ export default function App() {
               ))}
             </nav>
             <div style={{ flex: 1 }} />
-            <span className="phase-ribbon">PHASE 2 · PREVIEW</span>
+            <span className="phase-ribbon">PHASE 3 · PREVIEW</span>
           </header>
 
           <main className="content panel" key={`${brain.id}-${activeTab}`}>

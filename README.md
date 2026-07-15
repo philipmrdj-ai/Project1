@@ -35,5 +35,6 @@ npm run preview  # serve the built version
 - [x] **Phase 1** — design system + app shell, all brains & tabs as placeholders
 - [x] **Phase 2** — Books brain fully working + nested notes engine; Prompts,
       Boards, Flows and Notes are brain-scoped modules, live in every brain
-- [ ] **Phase 3** — Learning courses + Projects
+- [x] **Phase 3** — Learning center (courses with progress, links & documents,
+      notes), Projects brain, and card/list/compact view switching
 - [ ] **Phase 4** — polish: global search, export/import backup, shortcuts

@@ -90,11 +90,44 @@ export interface Note {
   updatedAt: number;
 }
 
+export interface CourseLink {
+  id: string;
+  title: string;
+  url: string;
+}
+
+export interface Course {
+  id: string;
+  title: string;
+  description: string;
+  statusId: string | null;
+  progress: number; // 0–100
+  links: CourseLink[];
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface Project {
+  id: string;
+  title: string;
+  description: string;
+  statusId: string | null;
+  categoryId: string | null;
+  archived: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
 export interface DB {
   version: number;
   books: Book[];
   genres: Label[];
   statuses: Label[];
+  courses: Course[];
+  courseStatuses: Label[];
+  projects: Project[];
+  projectStatuses: Label[];
+  projectCategories: Label[];
   prompts: Prompt[];
   promptCategories: Label[];
   boards: Board[];

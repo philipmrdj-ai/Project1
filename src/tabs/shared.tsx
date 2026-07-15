@@ -1,5 +1,5 @@
 import { ReactNode, useState } from "react";
-import { Settings2 } from "lucide-react";
+import { LayoutGrid, List, Rows3, Settings2 } from "lucide-react";
 
 /** Section header: title + subtitle on the left, actions on the right. */
 export function SectionHead({
@@ -64,37 +64,115 @@ export function FilterRow({
   );
 }
 
-/** Uncontrolled chip row — still used by Phase 3 placeholder tabs. */
-export function ChipRow({
-  label,
-  chips,
-  initial = 0,
+/* ---------- switchable collection views ---------- */
+
+export type ViewMode = "cards" | "list" | "compact";
+
+const VIEW_KEY = "brains.views.v1";
+
+function loadViews(): Record<string, ViewMode> {
+  try {
+    return JSON.parse(localStorage.getItem(VIEW_KEY) ?? "{}");
+  } catch {
+    return {};
+  }
+}
+
+/** Per-collection view preference, persisted. */
+export function useViewPref(key: string): [ViewMode, (v: ViewMode) => void] {
+  const [view, setView] = useState<ViewMode>(() => loadViews()[key] ?? "cards");
+  const set = (v: ViewMode) => {
+    setView(v);
+    try {
+      localStorage.setItem(VIEW_KEY, JSON.stringify({ ...loadViews(), [key]: v }));
+    } catch {
+      /* storage unavailable — preference just won't persist */
+    }
+  };
+  return [view, set];
+}
+
+export function ViewSwitcher({
+  value,
+  onChange,
 }: {
-  label?: string;
-  chips: string[];
-  initial?: number;
+  value: ViewMode;
+  onChange: (v: ViewMode) => void;
 }) {
-  const [active, setActive] = useState(initial);
+  const opts: { id: ViewMode; icon: ReactNode; title: string }[] = [
+    { id: "cards", icon: <LayoutGrid size={14} />, title: "Card view" },
+    { id: "list", icon: <List size={14} />, title: "List view" },
+    { id: "compact", icon: <Rows3 size={14} />, title: "Compact view" },
+  ];
   return (
-    <div className="chip-row">
-      {label && <span className="chip-label">{label}</span>}
-      {chips.map((c, i) => (
+    <div className="view-switch" role="group" aria-label="View">
+      {opts.map((o) => (
         <button
-          key={c}
-          className={`chip ${i === active ? "active" : ""}`}
-          onClick={() => setActive(i)}
+          key={o.id}
+          className={value === o.id ? "active" : ""}
+          title={o.title}
+          aria-pressed={value === o.id}
+          onClick={() => onChange(o.id)}
         >
-          {c}
+          {o.icon}
         </button>
       ))}
     </div>
   );
 }
 
-export function PlaceholderHint({ children }: { children: ReactNode }) {
+/** One item as rendered by ItemsView, whatever the entity. */
+export interface ItemVM {
+  id: string;
+  title: string;
+  desc: string;
+  badges: ReactNode;
+  /** extra row shown under the badges (e.g. a progress bar) */
+  extra?: ReactNode;
+}
+
+/** Renders a collection in the chosen view mode. */
+export function ItemsView({
+  items,
+  view,
+  onOpen,
+}: {
+  items: ItemVM[];
+  view: ViewMode;
+  onOpen: (id: string) => void;
+}) {
+  if (view === "cards") {
+    return (
+      <div className="card-grid">
+        {items.map((it) => (
+          <div className="card" key={it.id} onClick={() => onOpen(it.id)}>
+            <div className="stripe" />
+            <h3>{it.title}</h3>
+            <p>{it.desc || "No description yet."}</p>
+            <div className="meta-row">{it.badges}</div>
+            {it.extra}
+          </div>
+        ))}
+      </div>
+    );
+  }
   return (
-    <div className="empty-hint" style={{ marginTop: 22 }}>
-      {children}
+    <div className={`list-rows ${view === "compact" ? "compact" : ""}`}>
+      {items.map((it) => (
+        <div className="list-row" key={it.id} onClick={() => onOpen(it.id)}>
+          <div className="lr-stripe" />
+          <div className="lr-main">
+            <span className="lr-title">{it.title}</span>
+            {view === "list" && it.desc && (
+              <span className="lr-desc">{it.desc}</span>
+            )}
+          </div>
+          {view === "list" && it.extra && (
+            <div className="lr-extra">{it.extra}</div>
+          )}
+          <div className="lr-badges">{it.badges}</div>
+        </div>
+      ))}
     </div>
   );
 }

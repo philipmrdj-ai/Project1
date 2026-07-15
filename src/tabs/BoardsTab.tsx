@@ -149,7 +149,13 @@ export function BoardsTab({ brainId }: { brainId: BrainId }) {
               patchCols((cols) =>
                 cols.map((c) =>
                   c.id === col.id
-                    ? { ...c, cards: [...c.cards, { id: uid(), text, tags: [] }] }
+                    ? {
+                        ...c,
+                        cards: [
+                          ...c.cards,
+                          { id: uid(), text, tags: [], color: null },
+                        ],
+                      }
                     : c
                 )
               )
@@ -209,13 +215,17 @@ export function BoardsTab({ brainId }: { brainId: BrainId }) {
         <CardModal
           card={editingCard.card}
           onClose={() => setEditingCard(null)}
-          onSave={(text, tags) => {
+          onSave={(text, tags, color) => {
             patchCols((cols) =>
               cols.map((c) =>
                 c.id === editingCard.colId
                   ? {
                       ...c,
-                      cards: patchById(c.cards, editingCard.card.id, { text, tags }),
+                      cards: patchById(c.cards, editingCard.card.id, {
+                        text,
+                        tags,
+                        color,
+                      }),
                     }
                   : c
               )
@@ -344,6 +354,7 @@ function Column({
         <div
           className="kanban-card"
           key={card.id}
+          data-color={card.color ?? undefined}
           draggable
           onDragStart={(e) => {
             e.dataTransfer.effectAllowed = "move";
@@ -358,6 +369,7 @@ function Column({
           onDragOver={(e) => e.preventDefault()}
           onClick={() => onEditCard(card)}
         >
+          <span className="cc-bar" />
           {card.text}
           {card.tags.length > 0 && (
             <div className="k-tags">
@@ -452,6 +464,17 @@ function BoardNameModal({
   );
 }
 
+const CARD_COLORS = [
+  "red",
+  "orange",
+  "amber",
+  "green",
+  "teal",
+  "blue",
+  "violet",
+  "pink",
+];
+
 function CardModal({
   card,
   onClose,
@@ -460,11 +483,12 @@ function CardModal({
 }: {
   card: KanbanCard;
   onClose: () => void;
-  onSave: (text: string, tags: string[]) => void;
+  onSave: (text: string, tags: string[], color: string | null) => void;
   onDelete: () => void;
 }) {
   const [text, setText] = useState(card.text);
   const [tags, setTags] = useState(card.tags.join(", "));
+  const [color, setColor] = useState<string | null>(card.color);
   const submit = () =>
     text.trim() &&
     onSave(
@@ -472,7 +496,8 @@ function CardModal({
       tags
         .split(",")
         .map((t) => t.trim())
-        .filter(Boolean)
+        .filter(Boolean),
+      color
     );
   return (
     <Modal title="Edit card" onClose={onClose}>
@@ -491,6 +516,24 @@ function CardModal({
           placeholder="e.g. Hollow Crown, urgent"
           onChange={(e) => setTags(e.target.value)}
         />
+      </Field>
+      <Field label="Colour">
+        <div className="swatch-row">
+          <button
+            className={`swatch ${color === null ? "active" : ""}`}
+            title="No colour"
+            onClick={() => setColor(null)}
+          />
+          {CARD_COLORS.map((c) => (
+            <button
+              key={c}
+              className={`swatch ${color === c ? "active" : ""}`}
+              data-c={c}
+              title={c}
+              onClick={() => setColor(c)}
+            />
+          ))}
+        </div>
       </Field>
       <div className="m-actions">
         <button className="btn danger" onClick={onDelete}>

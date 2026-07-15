@@ -134,18 +134,23 @@ export function EmptyState({
 
 /* ---------- label manager (statuses, genres, categories) ---------- */
 
+export type LabelKind = "fiction" | "nonfiction" | "both";
+
 export function LabelManager({
   items,
   onAdd,
   onRename,
   onDelete,
+  onKind,
   addPlaceholder,
   deleteHint,
 }: {
-  items: { id: string; name: string }[];
+  items: { id: string; name: string; kind?: LabelKind }[];
   onAdd: (name: string) => void;
   onRename: (id: string, name: string) => void;
   onDelete: (id: string) => void;
+  /** when provided, each label gets a Fiction / Non-fiction / Both selector */
+  onKind?: (id: string, kind: LabelKind) => void;
   addPlaceholder: string;
   deleteHint?: string;
 }) {
@@ -183,6 +188,25 @@ export function LabelManager({
             />
           ) : (
             <span className="label-name">{it.name}</span>
+          )}
+          {onKind && editing !== it.id && (
+            <div className="seg small">
+              {(
+                [
+                  ["fiction", "Fiction"],
+                  ["nonfiction", "Non-fiction"],
+                  ["both", "Both"],
+                ] as [LabelKind, string][]
+              ).map(([k, lbl]) => (
+                <button
+                  key={k}
+                  className={(it.kind ?? "both") === k ? "active" : ""}
+                  onClick={() => onKind(it.id, k)}
+                >
+                  {lbl}
+                </button>
+              ))}
+            </div>
           )}
           <IconBtn
             title="Rename"

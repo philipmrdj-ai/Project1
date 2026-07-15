@@ -65,6 +65,28 @@ function seed(): DB {
     boards: [board("books"), board("learning"), board("projects")],
     flows: [],
     notes: [],
+    todoLists: [],
+    links: [],
+    linkCategories: ["Reading", "Tools", "Inspiration"].map((n) =>
+      label("private", n)
+    ),
+    inbox: [],
+  };
+}
+
+/** Fill in fields added after a DB was first saved. */
+function normalize(db: DB): DB {
+  return {
+    ...db,
+    books: db.books.map((b) => ({ ...b, progress: b.progress ?? 0 })),
+    genres: db.genres.map((g) => ({ ...g, kind: g.kind ?? "both" })),
+    boards: db.boards.map((brd) => ({
+      ...brd,
+      columns: brd.columns.map((c) => ({
+        ...c,
+        cards: c.cards.map((card) => ({ ...card, color: card.color ?? null })),
+      })),
+    })),
   };
 }
 
@@ -76,7 +98,7 @@ function loadDb(): DB {
       // merge over a fresh seed's shape so new collections added in later
       // versions get defaults instead of being undefined
       const base = seed();
-      return { ...base, ...parsed, version: base.version } as DB;
+      return normalize({ ...base, ...parsed, version: base.version } as DB);
     }
   } catch {
     /* corrupted or unavailable storage — start fresh */

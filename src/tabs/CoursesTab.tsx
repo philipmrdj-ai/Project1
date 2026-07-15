@@ -8,6 +8,7 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
+import { useSearch } from "../App";
 import { NotesPanel } from "../components/NotesPanel";
 import {
   Confirm,
@@ -17,6 +18,7 @@ import {
   LabelManager,
   Modal,
 } from "../components/ui";
+import { useScrollFade } from "../components/useScrollFade";
 import { now, patchById, removeById, uid, useDb } from "../state/store";
 import { Course } from "../state/types";
 import {
@@ -31,10 +33,10 @@ type Sort = "recent" | "progress" | "az";
 
 export function CoursesTab() {
   const [db, update] = useDb();
+  const q = useSearch();
   const [openId, setOpenId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [managing, setManaging] = useState(false);
-  const [q, setQ] = useState("");
   const [statusId, setStatusId] = useState<string | null>(null);
   const [sort, setSort] = useState<Sort>("recent");
   const [view, setView] = useViewPref("courses");
@@ -67,15 +69,9 @@ export function CoursesTab() {
         sub={`${db.courses.length} course${db.courses.length === 1 ? "" : "s"} — everything you're learning, in one calm place`}
         actions={
           <div className="toolbar">
-            <input
-              className="input search-input"
-              placeholder="Search courses…"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-            />
             <ViewSwitcher value={view} onChange={setView} />
             <button className="btn" onClick={() => setCreating(true)}>
-              <Plus size={14} /> New course
+              <Plus size={14} /> Course
             </button>
           </div>
         }
@@ -134,26 +130,14 @@ export function CoursesTab() {
             id: c.id,
             title: c.title,
             desc: c.description,
-            badges: (
-              <>
-                {statusName(c.statusId) && (
-                  <span className="badge">
-                    <span className="b-dot" />
-                    {statusName(c.statusId)}
-                  </span>
-                )}
-                {c.links.length > 0 && (
-                  <span className="badge neutral">
-                    <LinkIcon size={11} /> {c.links.length}
-                  </span>
-                )}
-              </>
-            ),
-            extra: (
-              <div className="progress" title={`${c.progress}%`}>
-                <div style={{ width: `${c.progress}%` }} />
-              </div>
-            ),
+            status: statusName(c.statusId),
+            progress: c.progress,
+            badges:
+              c.links.length > 0 ? (
+                <span className="badge neutral">
+                  <LinkIcon size={11} /> {c.links.length}
+                </span>
+              ) : undefined,
           }))}
         />
       )}
@@ -301,6 +285,7 @@ function CourseWorkspace({
   const [confirmDel, setConfirmDel] = useState(false);
   const [linkTitle, setLinkTitle] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
+  const fadeRef = useScrollFade<HTMLDivElement>();
 
   const patch = (p: Partial<Course>) =>
     update((d) => ({
@@ -350,43 +335,45 @@ function CourseWorkspace({
         onChange={(e) => patch({ title: e.target.value })}
       />
 
-      <div className="ws-meta">
-        <select
-          className="input"
-          value={course.statusId ?? ""}
-          onChange={(e) => patch({ statusId: e.target.value || null })}
-        >
-          <option value="">No status</option>
-          {db.courseStatuses.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <Field label="Progress">
-        <div className="progress-edit">
-          <input
-            type="range"
-            min={0}
-            max={100}
-            step={5}
-            value={course.progress}
-            onChange={(e) => patch({ progress: Number(e.target.value) })}
-          />
-          <span className="pct">{course.progress}%</span>
+      <div className="ws-fade" ref={fadeRef}>
+        <div className="ws-meta">
+          <select
+            className="input"
+            value={course.statusId ?? ""}
+            onChange={(e) => patch({ statusId: e.target.value || null })}
+          >
+            <option value="">No status</option>
+            {db.courseStatuses.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
         </div>
-      </Field>
 
-      <Field label="Description">
-        <textarea
-          className="input"
-          value={course.description}
-          placeholder="What's this course about? Where does it live?"
-          onChange={(e) => patch({ description: e.target.value })}
-        />
-      </Field>
+        <Field label="Progress">
+          <div className="progress-edit">
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={5}
+              value={course.progress}
+              onChange={(e) => patch({ progress: Number(e.target.value) })}
+            />
+            <span className="pct">{course.progress}%</span>
+          </div>
+        </Field>
+
+        <Field label="Description">
+          <textarea
+            className="input"
+            value={course.description}
+            placeholder="What's this course about? Where does it live?"
+            onChange={(e) => patch({ description: e.target.value })}
+          />
+        </Field>
+      </div>
 
       <div className="ws-section">
         <h4>Links &amp; documents</h4>

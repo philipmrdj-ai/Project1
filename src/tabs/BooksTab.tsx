@@ -8,6 +8,7 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
+import { useSearch } from "../App";
 import { NotesPanel } from "../components/NotesPanel";
 import {
   Confirm,
@@ -16,6 +17,7 @@ import {
   LabelManager,
   Modal,
 } from "../components/ui";
+import { useScrollFade } from "../components/useScrollFade";
 import { now, patchById, removeById, uid, useDb } from "../state/store";
 import { Book, Label } from "../state/types";
 import {
@@ -26,14 +28,22 @@ import {
   ViewSwitcher,
 } from "./shared";
 
+const kindLabel = (k: Book["kind"]) =>
+  k === "fiction" ? "Fiction" : "Non-fiction";
+
+/** genres that apply to the selected book type */
+function genresForKind(genres: Label[], kind: string | null): Label[] {
+  if (!kind) return genres;
+  return genres.filter((g) => (g.kind ?? "both") === kind || (g.kind ?? "both") === "both");
+}
+
 export function BooksTab() {
   const [db, update] = useDb();
+  const q = useSearch();
   const [openId, setOpenId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [managing, setManaging] = useState<"statuses" | "genres" | null>(null);
 
-  // filters
-  const [q, setQ] = useState("");
   const [kind, setKind] = useState<string | null>(null);
   const [statusId, setStatusId] = useState<string | null>(null);
   const [genreId, setGenreId] = useState<string | null>(null);
@@ -44,6 +54,18 @@ export function BooksTab() {
   if (openBook) {
     return <BookWorkspace book={openBook} onBack={() => setOpenId(null)} />;
   }
+
+  const labelName = (list: Label[], id: string | null) =>
+    list.find((l) => l.id === id)?.name ?? null;
+
+  // genres narrowed by the selected type (fiction genres for Fiction, …)
+  const visibleGenres = genresForKind(db.genres, kind);
+  const pickKind = (k: string | null) => {
+    setKind(k);
+    if (genreId && !genresForKind(db.genres, k).some((g) => g.id === genreId)) {
+      setGenreId(null);
+    }
+  };
 
   const active = db.books.filter((b) => !b.archived);
   const archived = db.books.filter((b) => b.archived);
@@ -58,22 +80,13 @@ export function BooksTab() {
     )
     .sort((a, b) => b.updatedAt - a.updatedAt);
 
-  const labelName = (list: Label[], id: string | null) =>
-    list.find((l) => l.id === id)?.name ?? null;
-
   return (
     <>
       <SectionHead
-        title={showArchived ? "Archived books" : "Books"}
+        title={showArchived ? "Archived books" : "Library"}
         sub={`${active.length} active · ${archived.length} archived`}
         actions={
           <div className="toolbar">
-            <input
-              className="input search-input"
-              placeholder="Search books…"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-            />
             <ViewSwitcher value={view} onChange={setView} />
             <button
               className={`btn ghost ${showArchived ? "active" : ""}`}
@@ -83,7 +96,7 @@ export function BooksTab() {
               {showArchived ? "Back to active" : "Archived"}
             </button>
             <button className="btn" onClick={() => setCreating(true)}>
-              <Plus size={14} /> New book
+              <Plus size={14} /> Book
             </button>
           </div>
         }
@@ -92,7 +105,7 @@ export function BooksTab() {
       <FilterRow
         label="Type"
         value={kind}
-        onChange={setKind}
+        onChange={pickKind}
         items={[
           { id: "fiction", label: "Fiction" },
           { id: "nonfiction", label: "Non-fiction" },
@@ -109,7 +122,7 @@ export function BooksTab() {
         label="Genre"
         value={genreId}
         onChange={setGenreId}
-        items={db.genres.map((g) => ({ id: g.id, label: g.name }))}
+        items={visibleGenres.map((g) => ({ id: g.id, label: g.name }))}
         onManage={() => setManaging("genres")}
       />
 
@@ -121,7 +134,7 @@ export function BooksTab() {
             hint="Add the book you're working on — you can archive it later when you want it out of sight."
             action={
               <button className="btn" onClick={() => setCreating(true)}>
-                <Plus size={14} /> New book
+                <Plus size={14} /> Book
               </button>
             }
           />
@@ -129,7 +142,7 @@ export function BooksTab() {
           <EmptyState
             icon={Search}
             title="Nothing matches"
-            hint="No books match the current filters."
+            hint="No books match the current filters or search."
           />
         )
       ) : (
@@ -140,24 +153,11 @@ export function BooksTab() {
             id: b.id,
             title: b.title,
             desc: b.description,
-            badges: (
-              <>
-                {labelName(db.statuses, b.statusId) && (
-                  <span className="badge">
-                    <span className="b-dot" />
-                    {labelName(db.statuses, b.statusId)}
-                  </span>
-                )}
-                {labelName(db.genres, b.genreId) && (
-                  <span className="badge neutral">
-                    {labelName(db.genres, b.genreId)}
-                  </span>
-                )}
-                <span className="badge neutral">
-                  {b.kind === "fiction" ? "Fiction" : "Non-fiction"}
-                </span>
-              </>
-            ),
+            status: labelName(db.statuses, b.statusId),
+            meta: [kindLabel(b.kind), labelName(db.genres, b.genreId)]
+              .filter(Boolean)
+              .join(" · "),
+            progress: b.progress,
           }))}
         />
       )}
@@ -201,19 +201,25 @@ export function BooksTab() {
         </Modal>
       )}
       {managing === "genres" && (
-        <Modal title="Edit genres" onClose={() => setManaging(null)}>
+        <Modal title="Edit genres" onClose={() => setManaging(null)} wide>
           <LabelManager
             items={db.genres}
             addPlaceholder="New genre name…"
-            deleteHint="Deleting a genre leaves its books without a genre — nothing else is lost."
+            deleteHint="Set each genre's type — it will only show up when filtering that type of book. Deleting a genre leaves its books without a genre."
             onAdd={(name) =>
               update((d) => ({
                 ...d,
-                genres: [...d.genres, { id: uid(), brainId: "books", name }],
+                genres: [
+                  ...d.genres,
+                  { id: uid(), brainId: "books", name, kind: "both" },
+                ],
               }))
             }
             onRename={(id, name) =>
               update((d) => ({ ...d, genres: patchById(d.genres, id, { name }) }))
+            }
+            onKind={(id, k) =>
+              update((d) => ({ ...d, genres: patchById(d.genres, id, { kind: k }) }))
             }
             onDelete={(id) =>
               update((d) => ({
@@ -249,6 +255,14 @@ function BookForm({
   );
   const [genreId, setGenreId] = useState<string | null>(null);
 
+  const genreOptions = genresForKind(db.genres, kind);
+  const pickKind = (k: Book["kind"]) => {
+    setKind(k);
+    if (genreId && !genresForKind(db.genres, k).some((g) => g.id === genreId)) {
+      setGenreId(null);
+    }
+  };
+
   const save = () => {
     if (!title.trim()) return;
     onSave({
@@ -258,6 +272,7 @@ function BookForm({
       kind,
       statusId,
       genreId,
+      progress: 0,
       archived: false,
       createdAt: now(),
       updatedAt: now(),
@@ -280,13 +295,13 @@ function BookForm({
         <div className="seg">
           <button
             className={kind === "fiction" ? "active" : ""}
-            onClick={() => setKind("fiction")}
+            onClick={() => pickKind("fiction")}
           >
             Fiction
           </button>
           <button
             className={kind === "nonfiction" ? "active" : ""}
-            onClick={() => setKind("nonfiction")}
+            onClick={() => pickKind("nonfiction")}
           >
             Non-fiction
           </button>
@@ -314,7 +329,7 @@ function BookForm({
             onChange={(e) => setGenreId(e.target.value || null)}
           >
             <option value="">No genre</option>
-            {db.genres.map((g) => (
+            {genreOptions.map((g) => (
               <option key={g.id} value={g.id}>
                 {g.name}
               </option>
@@ -347,6 +362,7 @@ function BookForm({
 function BookWorkspace({ book, onBack }: { book: Book; onBack: () => void }) {
   const [db, update] = useDb();
   const [confirmDel, setConfirmDel] = useState(false);
+  const fadeRef = useScrollFade<HTMLDivElement>();
 
   const patch = (p: Partial<Book>) =>
     update((d) => ({
@@ -363,11 +379,13 @@ function BookWorkspace({ book, onBack }: { book: Book; onBack: () => void }) {
     onBack();
   };
 
+  const genreOptions = genresForKind(db.genres, book.kind);
+
   return (
     <>
       <div className="ws-head">
         <button className="ws-back" onClick={onBack}>
-          <ArrowLeft size={14} /> All books
+          <ArrowLeft size={14} /> Library
         </button>
         <div className="toolbar">
           <button
@@ -384,10 +402,7 @@ function BookWorkspace({ book, onBack }: { book: Book; onBack: () => void }) {
               </>
             )}
           </button>
-          <button
-            className="btn danger small"
-            onClick={() => setConfirmDel(true)}
-          >
+          <button className="btn danger small" onClick={() => setConfirmDel(true)}>
             <Trash2 size={13} /> Delete
           </button>
         </div>
@@ -400,56 +415,72 @@ function BookWorkspace({ book, onBack }: { book: Book; onBack: () => void }) {
         onChange={(e) => patch({ title: e.target.value })}
       />
 
-      <div className="ws-meta">
-        <div className="seg">
-          <button
-            className={book.kind === "fiction" ? "active" : ""}
-            onClick={() => patch({ kind: "fiction" })}
+      <div className="ws-fade" ref={fadeRef}>
+        <div className="ws-meta">
+          <div className="seg">
+            <button
+              className={book.kind === "fiction" ? "active" : ""}
+              onClick={() => patch({ kind: "fiction" })}
+            >
+              Fiction
+            </button>
+            <button
+              className={book.kind === "nonfiction" ? "active" : ""}
+              onClick={() => patch({ kind: "nonfiction" })}
+            >
+              Non-fiction
+            </button>
+          </div>
+          <select
+            className="input"
+            value={book.statusId ?? ""}
+            onChange={(e) => patch({ statusId: e.target.value || null })}
           >
-            Fiction
-          </button>
-          <button
-            className={book.kind === "nonfiction" ? "active" : ""}
-            onClick={() => patch({ kind: "nonfiction" })}
+            <option value="">No status</option>
+            {db.statuses.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+          <select
+            className="input"
+            value={book.genreId ?? ""}
+            onChange={(e) => patch({ genreId: e.target.value || null })}
           >
-            Non-fiction
-          </button>
+            <option value="">No genre</option>
+            {genreOptions.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.name}
+              </option>
+            ))}
+          </select>
+          {book.archived && <span className="badge neutral">Archived</span>}
         </div>
-        <select
-          className="input"
-          value={book.statusId ?? ""}
-          onChange={(e) => patch({ statusId: e.target.value || null })}
-        >
-          <option value="">No status</option>
-          {db.statuses.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-        <select
-          className="input"
-          value={book.genreId ?? ""}
-          onChange={(e) => patch({ genreId: e.target.value || null })}
-        >
-          <option value="">No genre</option>
-          {db.genres.map((g) => (
-            <option key={g.id} value={g.id}>
-              {g.name}
-            </option>
-          ))}
-        </select>
-        {book.archived && <span className="badge neutral">Archived</span>}
-      </div>
 
-      <Field label="Description">
-        <textarea
-          className="input"
-          value={book.description}
-          placeholder="What is this book about?"
-          onChange={(e) => patch({ description: e.target.value })}
-        />
-      </Field>
+        <Field label="Progress">
+          <div className="progress-edit">
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={5}
+              value={book.progress}
+              onChange={(e) => patch({ progress: Number(e.target.value) })}
+            />
+            <span className="pct">{book.progress}%</span>
+          </div>
+        </Field>
+
+        <Field label="Description">
+          <textarea
+            className="input"
+            value={book.description}
+            placeholder="What is this book about?"
+            onChange={(e) => patch({ description: e.target.value })}
+          />
+        </Field>
+      </div>
 
       <div className="ws-section">
         <h4>Notes for this book</h4>

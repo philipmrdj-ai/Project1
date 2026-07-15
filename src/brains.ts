@@ -1,9 +1,8 @@
-/** Static definition of the four brains and their tabs (Phase 1). */
+/** Static definition of the four brains and their tabs. */
 import {
   BookOpen,
   GraduationCap,
-  Library,
-  Lock,
+  ListChecks,
   LucideIcon,
   Rocket,
   Sparkles,
@@ -19,7 +18,8 @@ export type TabId =
   | "flows"
   | "notes"
   | "courses"
-  | "projects";
+  | "projects"
+  | "todos";
 
 export interface TabDef {
   id: TabId;
@@ -30,7 +30,7 @@ export interface TabDef {
 export interface BrainDef {
   id: "books" | "learning" | "projects" | "private";
   label: string;
-  icon: LucideIcon;
+  glyph: string;
   tagline: string;
   tabs: TabDef[];
 }
@@ -45,46 +45,49 @@ export const BRAINS: BrainDef[] = [
   {
     id: "books",
     label: "Books",
-    icon: Library,
-    tagline: "Everything you're writing — nothing else.",
+    glyph: "B",
+    tagline: "Write, prompt, plan",
     tabs: [
-      t("books", "Books", BookOpen),
+      t("books", "Library", BookOpen),
       t("prompts", "Prompts", Sparkles),
-      t("boards", "Boards", SquareKanban),
-      t("flows", "Flows", Waypoints),
+      t("boards", "Workflow", SquareKanban),
+      t("flows", "Process Flows", Waypoints),
+      t("todos", "To-dos", ListChecks),
       t("notes", "Notes", StickyNote),
     ],
   },
   {
     id: "learning",
     label: "Learning",
-    icon: GraduationCap,
-    tagline: "Courses and skills you're building right now.",
+    glyph: "L",
+    tagline: "Courses & growth",
     tabs: [
       t("courses", "Courses", GraduationCap),
-      t("boards", "Boards", SquareKanban),
-      t("flows", "Flows", Waypoints),
+      t("boards", "Workflow", SquareKanban),
+      t("flows", "Process Flows", Waypoints),
+      t("todos", "To-dos", ListChecks),
       t("notes", "Notes", StickyNote),
     ],
   },
   {
     id: "projects",
     label: "Projects",
-    icon: Rocket,
-    tagline: "Active projects, one focus at a time.",
+    glyph: "P",
+    tagline: "Build & ship",
     tabs: [
       t("projects", "Projects", Rocket),
       t("prompts", "Prompts", Sparkles),
-      t("boards", "Boards", SquareKanban),
-      t("flows", "Flows", Waypoints),
+      t("boards", "Workflow", SquareKanban),
+      t("flows", "Process Flows", Waypoints),
+      t("todos", "To-dos", ListChecks),
       t("notes", "Notes", StickyNote),
     ],
   },
   {
     id: "private",
     label: "Private",
-    icon: Lock,
-    tagline: "Your personal space for any kind of note.",
-    tabs: [t("notes", "Notes", StickyNote)],
+    glyph: "✦",
+    tagline: "Notes & thoughts",
+    tabs: [t("notes", "Notes", StickyNote), t("todos", "To-dos", ListChecks)],
   },
 ];

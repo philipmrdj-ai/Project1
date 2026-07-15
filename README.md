@@ -10,8 +10,15 @@ completely separate **brains** so you can focus 100% on one thing at a time:
 | 🚀 Projects | Amber | Active projects, prompts, boards, flows, notes |
 | 🔒 Private | Rose | Infinite nested personal notes |
 
-Design: glassmorphism + ADHD-friendly — one accent colour per brain, high
-contrast, big targets, chunked sections, minimal motion.
+Design (v3, from the owner's reference): Space Grotesk + Instrument Sans,
+one oklch hue per brain (gold / cyan / violet / rose), per-brain sidebar with
+focus timer, cover-style cards. Two modes: **Glass** (dark, ambient) and
+**Focus** (light, flat, minimal) — toggle in the sidebar.
+
+Beyond the four brains: a global **Links** library (categories + notes per
+link), a global **Inbox** for quick capture with one-at-a-time sorting into
+any brain, **To-do lists** per brain, kanban card colours, typed genres
+(fiction/non-fiction), book/course progress bars, and ⌘K search.
 
 All data is stored locally in your browser (localStorage). No server, no
 account, no tracking.
@@ -37,4 +44,9 @@ npm run preview  # serve the built version
       Boards, Flows and Notes are brain-scoped modules, live in every brain
 - [x] **Phase 3** — Learning center (courses with progress, links & documents,
       notes), Projects brain, and card/list/compact view switching
-- [ ] **Phase 4** — polish: global search, export/import backup, shortcuts
+- [x] **Phase 3.5** — design v3 from the owner's reference (sidebar layout,
+      cover cards, focus timer), prompts views, genre types, scroll-fade
+      workspaces, kanban card colours, To-dos, global Links, and the Inbox
+      with one-at-a-time sorting
+- [ ] **Phase 4** — polish: global cross-brain search, export/import backup,
+      shortcuts

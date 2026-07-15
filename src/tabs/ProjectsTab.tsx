@@ -8,6 +8,7 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
+import { useSearch } from "../App";
 import { NotesPanel } from "../components/NotesPanel";
 import {
   Confirm,
@@ -16,6 +17,7 @@ import {
   LabelManager,
   Modal,
 } from "../components/ui";
+import { useScrollFade } from "../components/useScrollFade";
 import { now, patchById, removeById, uid, useDb } from "../state/store";
 import { Label, Project } from "../state/types";
 import {
@@ -33,7 +35,7 @@ export function ProjectsTab() {
   const [managing, setManaging] = useState<"statuses" | "categories" | null>(
     null
   );
-  const [q, setQ] = useState("");
+  const q = useSearch();
   const [statusId, setStatusId] = useState<string | null>(null);
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
@@ -68,12 +70,6 @@ export function ProjectsTab() {
         sub={`${active.length} active · ${archived.length} archived`}
         actions={
           <div className="toolbar">
-            <input
-              className="input search-input"
-              placeholder="Search projects…"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-            />
             <ViewSwitcher value={view} onChange={setView} />
             <button
               className={`btn ghost ${showArchived ? "active" : ""}`}
@@ -83,7 +79,7 @@ export function ProjectsTab() {
               {showArchived ? "Back to active" : "Archived"}
             </button>
             <button className="btn" onClick={() => setCreating(true)}>
-              <Plus size={14} /> New project
+              <Plus size={14} /> Project
             </button>
           </div>
         }
@@ -131,21 +127,8 @@ export function ProjectsTab() {
             id: p.id,
             title: p.title,
             desc: p.description,
-            badges: (
-              <>
-                {labelName(db.projectStatuses, p.statusId) && (
-                  <span className="badge">
-                    <span className="b-dot" />
-                    {labelName(db.projectStatuses, p.statusId)}
-                  </span>
-                )}
-                {labelName(db.projectCategories, p.categoryId) && (
-                  <span className="badge neutral">
-                    {labelName(db.projectCategories, p.categoryId)}
-                  </span>
-                )}
-              </>
-            ),
+            status: labelName(db.projectStatuses, p.statusId),
+            meta: labelName(db.projectCategories, p.categoryId),
           }))}
         />
       )}
@@ -335,6 +318,7 @@ function ProjectWorkspace({
 }) {
   const [db, update] = useDb();
   const [confirmDel, setConfirmDel] = useState(false);
+  const fadeRef = useScrollFade<HTMLDivElement>();
 
   const patch = (p: Partial<Project>) =>
     update((d) => ({
@@ -385,42 +369,44 @@ function ProjectWorkspace({
         onChange={(e) => patch({ title: e.target.value })}
       />
 
-      <div className="ws-meta">
-        <select
-          className="input"
-          value={project.statusId ?? ""}
-          onChange={(e) => patch({ statusId: e.target.value || null })}
-        >
-          <option value="">No status</option>
-          {db.projectStatuses.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-        <select
-          className="input"
-          value={project.categoryId ?? ""}
-          onChange={(e) => patch({ categoryId: e.target.value || null })}
-        >
-          <option value="">No category</option>
-          {db.projectCategories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-        {project.archived && <span className="badge neutral">Archived</span>}
-      </div>
+      <div className="ws-fade" ref={fadeRef}>
+        <div className="ws-meta">
+          <select
+            className="input"
+            value={project.statusId ?? ""}
+            onChange={(e) => patch({ statusId: e.target.value || null })}
+          >
+            <option value="">No status</option>
+            {db.projectStatuses.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+          <select
+            className="input"
+            value={project.categoryId ?? ""}
+            onChange={(e) => patch({ categoryId: e.target.value || null })}
+          >
+            <option value="">No category</option>
+            {db.projectCategories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+          {project.archived && <span className="badge neutral">Archived</span>}
+        </div>
 
-      <Field label="Description">
-        <textarea
-          className="input"
-          value={project.description}
-          placeholder="What is this project about?"
-          onChange={(e) => patch({ description: e.target.value })}
-        />
-      </Field>
+        <Field label="Description">
+          <textarea
+            className="input"
+            value={project.description}
+            placeholder="What is this project about?"
+            onChange={(e) => patch({ description: e.target.value })}
+          />
+        </Field>
+      </div>
 
       <div className="ws-section">
         <h4>Notes for this project</h4>

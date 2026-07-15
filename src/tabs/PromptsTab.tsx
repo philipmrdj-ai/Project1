@@ -12,6 +12,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { useSearch } from "../App";
 import {
   Confirm,
   EmptyState,
@@ -29,21 +30,28 @@ import {
   useDb,
 } from "../state/store";
 import { BrainId, PipelineStep, Prompt } from "../state/types";
-import { FilterRow, SectionHead } from "./shared";
+import {
+  FilterRow,
+  SectionHead,
+  useViewPref,
+  ViewSwitcher,
+} from "./shared";
 
 type Sort = "recent" | "az" | "most";
 
 export function PromptsTab({ brainId }: { brainId: BrainId }) {
   const [db, update] = useDb();
-  const [q, setQ] = useState("");
+  const q = useSearch();
   const [catId, setCatId] = useState<string | null>(null);
   const [sort, setSort] = useState<Sort>("recent");
+  const [view, setView] = useViewPref(`prompts-${brainId}`, "list");
   const [editing, setEditing] = useState<Prompt | "new" | null>(null);
   const [managingCats, setManagingCats] = useState(false);
   const [confirmDel, setConfirmDel] = useState<Prompt | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const cats = db.promptCategories.filter((c) => c.brainId === brainId);
+  const catName = (id: string | null) => cats.find((c) => c.id === id)?.name;
   const prompts = db.prompts
     .filter((p) => p.brainId === brainId)
     .filter((p) => !catId || p.categoryId === catId)
@@ -57,7 +65,9 @@ export function PromptsTab({ brainId }: { brainId: BrainId }) {
     .sort((a, b) => {
       if (sort === "az") return a.title.localeCompare(b.title);
       if (sort === "most") return b.copiedCount - a.copiedCount;
-      return Math.max(b.lastUsedAt, b.updatedAt) - Math.max(a.lastUsedAt, a.updatedAt);
+      return (
+        Math.max(b.lastUsedAt, b.updatedAt) - Math.max(a.lastUsedAt, a.updatedAt)
+      );
     });
 
   const markCopied = (key: string, promptId: string) => {
@@ -80,6 +90,13 @@ export function PromptsTab({ brainId }: { brainId: BrainId }) {
     if (await copyText(s.body || s.title)) markCopied(s.id, p.id);
   };
 
+  const copyBtn = (p: Prompt) => (
+    <button className="btn small" onClick={(e) => { e.stopPropagation(); copyBody(p); }}>
+      {copiedKey === p.id ? <Check size={13} /> : <Copy size={13} />}
+      {copiedKey === p.id ? "Copied" : "Copy"}
+    </button>
+  );
+
   return (
     <>
       <SectionHead
@@ -87,14 +104,9 @@ export function PromptsTab({ brainId }: { brainId: BrainId }) {
         sub="Your prompt library — copy with one click"
         actions={
           <div className="toolbar">
-            <input
-              className="input search-input"
-              placeholder="Search prompts…"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-            />
+            <ViewSwitcher value={view} onChange={setView} />
             <button className="btn" onClick={() => setEditing("new")}>
-              <Plus size={14} /> New prompt
+              <Plus size={14} /> Prompt
             </button>
           </div>
         }
@@ -134,7 +146,7 @@ export function PromptsTab({ brainId }: { brainId: BrainId }) {
             hint="Store the prompts you reuse — each gets a one-click copy button, and you can chain pipeline steps onto any of them."
             action={
               <button className="btn" onClick={() => setEditing("new")}>
-                <Plus size={14} /> New prompt
+                <Plus size={14} /> Prompt
               </button>
             }
           />
@@ -142,9 +154,56 @@ export function PromptsTab({ brainId }: { brainId: BrainId }) {
           <EmptyState
             icon={Search}
             title="Nothing matches"
-            hint="No prompts match the current filters."
+            hint="No prompts match the current filters or search."
           />
         )
+      ) : view === "cards" ? (
+        <div className="cv-grid">
+          {prompts.map((p) => (
+            <div className="cv-card" key={p.id} onClick={() => setEditing(p)}>
+              <div className="cv-body" style={{ paddingTop: 17 }}>
+                <div className="cv-meta">
+                  {p.categoryId && (
+                    <span className="badge neutral">{catName(p.categoryId)}</span>
+                  )}
+                  {p.pipeline.length > 0 && (
+                    <span className="m-text">
+                      ⛓ {p.pipeline.length} step{p.pipeline.length > 1 ? "s" : ""}
+                    </span>
+                  )}
+                </div>
+                <div className="cv-title">{p.title}</div>
+                {p.description && <div className="cv-desc">{p.description}</div>}
+                <div style={{ marginTop: 13, display: "flex", gap: 6 }}>
+                  {copyBtn(p)}
+                  <IconBtn
+                    title="Delete prompt"
+                    danger
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setConfirmDel(p);
+                    }}
+                  >
+                    <Trash2 size={14} />
+                  </IconBtn>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : view === "compact" ? (
+        prompts.map((p) => (
+          <div className="prompt-row" key={p.id}>
+            <span className="pr-title">{p.title}</span>
+            {p.categoryId && (
+              <span className="badge neutral">{catName(p.categoryId)}</span>
+            )}
+            {copyBtn(p)}
+            <IconBtn title="Edit prompt" onClick={() => setEditing(p)}>
+              <Pencil size={13} />
+            </IconBtn>
+          </div>
+        ))
       ) : (
         prompts.map((p) => (
           <div className="prompt-card" key={p.id}>
@@ -155,18 +214,17 @@ export function PromptsTab({ brainId }: { brainId: BrainId }) {
               </div>
               <div className="prompt-actions">
                 {p.categoryId && (
-                  <span className="badge neutral">
-                    {cats.find((c) => c.id === p.categoryId)?.name}
-                  </span>
+                  <span className="badge neutral">{catName(p.categoryId)}</span>
                 )}
-                <button className="btn small" onClick={() => copyBody(p)}>
-                  {copiedKey === p.id ? <Check size={13} /> : <Copy size={13} />}
-                  {copiedKey === p.id ? "Copied" : "Copy"}
-                </button>
+                {copyBtn(p)}
                 <IconBtn title="Edit prompt" onClick={() => setEditing(p)}>
                   <Pencil size={14} />
                 </IconBtn>
-                <IconBtn title="Delete prompt" danger onClick={() => setConfirmDel(p)}>
+                <IconBtn
+                  title="Delete prompt"
+                  danger
+                  onClick={() => setConfirmDel(p)}
+                >
                   <Trash2 size={14} />
                 </IconBtn>
               </div>
@@ -182,8 +240,7 @@ export function PromptsTab({ brainId }: { brainId: BrainId }) {
                   >
                     {i > 0 && "→"}
                     <button
-                      className="p-step clickable"
-                      style={{ background: "transparent", fontFamily: "inherit" }}
+                      className="p-step"
                       title="Copy this step"
                       onClick={() => copyStep(p, s)}
                     >
@@ -373,7 +430,9 @@ function PromptForm({
       <Field label="Pipeline steps (optional)">
         {pipeline.map((s, i) => (
           <div key={s.id} className="step-row" style={{ alignItems: "flex-start" }}>
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
+            <div
+              style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}
+            >
               <input
                 className="input"
                 value={s.title}

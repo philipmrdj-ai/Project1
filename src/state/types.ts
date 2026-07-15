@@ -7,6 +7,8 @@ export interface Label {
   id: string;
   brainId: BrainId;
   name: string;
+  /** genres only: which book type this genre belongs to */
+  kind?: "fiction" | "nonfiction" | "both";
 }
 
 export interface Book {
@@ -16,6 +18,7 @@ export interface Book {
   kind: "fiction" | "nonfiction";
   genreId: string | null;
   statusId: string | null;
+  progress: number; // 0–100
   archived: boolean;
   createdAt: number;
   updatedAt: number;
@@ -44,6 +47,8 @@ export interface KanbanCard {
   id: string;
   text: string;
   tags: string[];
+  /** one of the fixed palette names, or null for neutral */
+  color: string | null;
 }
 
 export interface KanbanColumn {
@@ -118,6 +123,36 @@ export interface Project {
   updatedAt: number;
 }
 
+export interface TodoItem {
+  id: string;
+  text: string;
+  done: boolean;
+}
+
+export interface TodoList {
+  id: string;
+  brainId: BrainId;
+  name: string;
+  items: TodoItem[];
+}
+
+/** Global saved link (the Links space in the sidebar). */
+export interface LinkItem {
+  id: string;
+  title: string;
+  url: string;
+  categoryId: string | null;
+  note: string;
+  createdAt: number;
+}
+
+/** Unsorted quick-capture note waiting in the Inbox. */
+export interface InboxNote {
+  id: string;
+  text: string;
+  createdAt: number;
+}
+
 export interface DB {
   version: number;
   books: Book[];
@@ -133,4 +168,8 @@ export interface DB {
   boards: Board[];
   flows: Flow[];
   notes: Note[];
+  todoLists: TodoList[];
+  links: LinkItem[];
+  linkCategories: Label[];
+  inbox: InboxNote[];
 }

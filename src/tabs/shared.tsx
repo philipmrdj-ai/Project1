@@ -55,7 +55,11 @@ export function FilterRow({
         </button>
       ))}
       {onManage && (
-        <button className="chip" onClick={onManage} title={`Edit ${label.toLowerCase()}`}>
+        <button
+          className="chip"
+          onClick={onManage}
+          title={`Edit ${label.toLowerCase()}`}
+        >
           <Settings2 size={11} style={{ verticalAlign: -1.5, marginRight: 4 }} />
           edit
         </button>
@@ -79,12 +83,18 @@ function loadViews(): Record<string, ViewMode> {
 }
 
 /** Per-collection view preference, persisted. */
-export function useViewPref(key: string): [ViewMode, (v: ViewMode) => void] {
-  const [view, setView] = useState<ViewMode>(() => loadViews()[key] ?? "cards");
+export function useViewPref(
+  key: string,
+  def: ViewMode = "cards"
+): [ViewMode, (v: ViewMode) => void] {
+  const [view, setView] = useState<ViewMode>(() => loadViews()[key] ?? def);
   const set = (v: ViewMode) => {
     setView(v);
     try {
-      localStorage.setItem(VIEW_KEY, JSON.stringify({ ...loadViews(), [key]: v }));
+      localStorage.setItem(
+        VIEW_KEY,
+        JSON.stringify({ ...loadViews(), [key]: v })
+      );
     } catch {
       /* storage unavailable — preference just won't persist */
     }
@@ -100,9 +110,9 @@ export function ViewSwitcher({
   onChange: (v: ViewMode) => void;
 }) {
   const opts: { id: ViewMode; icon: ReactNode; title: string }[] = [
-    { id: "cards", icon: <LayoutGrid size={14} />, title: "Card view" },
-    { id: "list", icon: <List size={14} />, title: "List view" },
-    { id: "compact", icon: <Rows3 size={14} />, title: "Compact view" },
+    { id: "cards", icon: <LayoutGrid size={13} />, title: "Grid" },
+    { id: "list", icon: <List size={13} />, title: "List" },
+    { id: "compact", icon: <Rows3 size={13} />, title: "Compact" },
   ];
   return (
     <div className="view-switch" role="group" aria-label="View">
@@ -110,11 +120,12 @@ export function ViewSwitcher({
         <button
           key={o.id}
           className={value === o.id ? "active" : ""}
-          title={o.title}
+          title={`${o.title} view`}
           aria-pressed={value === o.id}
           onClick={() => onChange(o.id)}
         >
           {o.icon}
+          {o.title}
         </button>
       ))}
     </div>
@@ -126,12 +137,17 @@ export interface ItemVM {
   id: string;
   title: string;
   desc: string;
-  badges: ReactNode;
-  /** extra row shown under the badges (e.g. a progress bar) */
-  extra?: ReactNode;
+  /** status pill text (accent) */
+  status?: string | null;
+  /** small grey meta text, e.g. "Fiction · Fantasy" */
+  meta?: string | null;
+  /** 0–100; when set, cards/list show a progress bar */
+  progress?: number;
+  /** extra badges (links count, etc.) */
+  badges?: ReactNode;
 }
 
-/** Renders a collection in the chosen view mode. */
+/** Renders a collection in the chosen view mode (design v3: cover cards). */
 export function ItemsView({
   items,
   view,
@@ -143,14 +159,33 @@ export function ItemsView({
 }) {
   if (view === "cards") {
     return (
-      <div className="card-grid">
+      <div className="cv-grid">
         {items.map((it) => (
-          <div className="card" key={it.id} onClick={() => onOpen(it.id)}>
-            <div className="stripe" />
-            <h3>{it.title}</h3>
-            <p>{it.desc || "No description yet."}</p>
-            <div className="meta-row">{it.badges}</div>
-            {it.extra}
+          <div className="cv-card" key={it.id} onClick={() => onOpen(it.id)}>
+            <div className="cv-cover">
+              <span />
+            </div>
+            <div className="cv-body">
+              <div className="cv-meta">
+                {it.status && <span className="badge">{it.status}</span>}
+                {it.meta && <span className="m-text">{it.meta}</span>}
+                {it.badges}
+              </div>
+              <div className="cv-title">{it.title}</div>
+              {it.desc && <div className="cv-desc">{it.desc}</div>}
+              {it.progress !== undefined && (
+                <div className="cv-progress">
+                  <div className="progress">
+                    <div style={{ width: `${Math.max(it.progress, 2)}%` }} />
+                  </div>
+                  <div className="progress-label">
+                    {it.progress > 0
+                      ? `${it.progress}% complete`
+                      : "Not started"}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         ))}
       </div>
@@ -167,10 +202,20 @@ export function ItemsView({
               <span className="lr-desc">{it.desc}</span>
             )}
           </div>
-          {view === "list" && it.extra && (
-            <div className="lr-extra">{it.extra}</div>
+          {view === "list" && it.progress !== undefined && (
+            <div className="lr-extra">
+              <div className="progress">
+                <div style={{ width: `${Math.max(it.progress, 2)}%` }} />
+              </div>
+            </div>
           )}
-          <div className="lr-badges">{it.badges}</div>
+          <div className="lr-badges">
+            {it.status && <span className="badge">{it.status}</span>}
+            {view === "list" && it.meta && (
+              <span className="badge neutral">{it.meta}</span>
+            )}
+            {view === "list" && it.badges}
+          </div>
         </div>
       ))}
     </div>
